@@ -11,6 +11,7 @@ export async function getAuthUser() {
     const payload = await verifyToken(token)
     return {
       id: payload.sub as string,
+      _id: payload.sub as string,
       email: payload.email as string,
       firstName: payload.firstName as string,
       lastName: payload.lastName as string,

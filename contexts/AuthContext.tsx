@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 interface AuthUser {
   id: string
+  _id: string
   email: string
   firstName: string
   lastName: string

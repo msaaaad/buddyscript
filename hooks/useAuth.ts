@@ -6,6 +6,7 @@ import { http } from '@/lib/http-client'
 
 interface AuthUser {
   id: string
+  _id: string
   email: string
   firstName: string
   lastName: string
