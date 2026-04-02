@@ -1,19 +1,17 @@
 import mongoose, { Schema, Document, Model, Types } from 'mongoose'
 
-interface IReply {
-  _id: Types.ObjectId
+export interface IReply extends Document {
   authorId: Types.ObjectId
   content: string
-  likes: Types.ObjectId[]
+  likes: Types.DocumentArray<Types.ObjectId>
   createdAt: Date
 }
 
-interface IComment {
-  _id: Types.ObjectId
+export interface IComment extends Document {
   authorId: Types.ObjectId
   content: string
-  likes: Types.ObjectId[]
-  replies: IReply[]
+  likes: Types.DocumentArray<Types.ObjectId>
+  replies: Types.DocumentArray<IReply>
   createdAt: Date
 }
 
@@ -22,8 +20,8 @@ export interface IPost extends Document {
   content: string
   imageUrl?: string
   visibility: 'public' | 'private'
-  likes: Types.ObjectId[]
-  comments: IComment[]
+  likes: Types.DocumentArray<Types.ObjectId>
+  comments: Types.DocumentArray<IComment>
   createdAt: Date
   updatedAt: Date
 }
