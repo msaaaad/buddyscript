@@ -2,19 +2,17 @@
 
 import { useState } from 'react'
 import CommentSection from './CommentSection'
+import ReactorsPopup from './ReactorsPopup'
 import { Post } from '@/hooks/usePosts'
+import { useReactions } from '@/hooks/useReactions'
 
 interface PostCardProps {
   post: Post
   currentUserId: string
-  onToggleLike: (postId: string) => Promise<void>
+  onToggleLike: (targetId: string, targetType: 'post' | 'comment') => Promise<void>
   onDeletePost: (postId: string) => Promise<void>
-  onAddComment: (postId: string, content: string) => Promise<void>
-  onToggleCommentLike: (postId: string, commentId: string) => Promise<void>
+  onAddComment: (postId: string, content: string, parentId?: string | null) => Promise<void>
   onDeleteComment: (postId: string, commentId: string) => Promise<void>
-  onAddReply: (postId: string, commentId: string, content: string) => Promise<void>
-  onToggleReplyLike: (postId: string, commentId: string, replyId: string) => Promise<void>
-  onDeleteReply: (postId: string, commentId: string, replyId: string) => Promise<void>
 }
 
 export default function PostCard({
@@ -23,16 +21,12 @@ export default function PostCard({
   onToggleLike,
   onDeletePost,
   onAddComment,
-  onToggleCommentLike,
   onDeleteComment,
-  onAddReply,
-  onToggleReplyLike,
-  onDeleteReply,
 }: PostCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const { reactors, isLoading: reactorsLoading, activeTarget, fetchReactors, close } = useReactions()
   const isOwner = post.authorId._id === currentUserId
-  const isLiked = post.likes.includes(currentUserId)
 
   return (
     <div className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
@@ -80,16 +74,6 @@ export default function PostCard({
                     Save Post
                   </a>
                 </li>
-                <li className="_feed_timeline_dropdown_item">
-                  <a href="#" className="_feed_timeline_dropdown_link">
-                    <span>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18">
-                        <path stroke="#1890FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M14.25 2.25H3.75a1.5 1.5 0 00-1.5 1.5v10.5a1.5 1.5 0 001.5 1.5h10.5a1.5 1.5 0 001.5-1.5V3.75a1.5 1.5 0 00-1.5-1.5zM6.75 6.75l4.5 4.5M11.25 6.75l-4.5 4.5" />
-                      </svg>
-                    </span>
-                    Hide
-                  </a>
-                </li>
                 {isOwner && (
                   <li className="_feed_timeline_dropdown_item">
                     <button
@@ -125,10 +109,23 @@ export default function PostCard({
 
       {/* Reaction counts row */}
       <div className="_feed_inner_timeline_total_reacts _padd_r24 _padd_l24 _mar_b26">
-        <div className="_feed_inner_timeline_total_reacts_image">
-          { post.likes.length > 0 && <img src="/assets/images/react_img1.png" alt="Image" className="_react_img" />}
-          { post.likes.length > 1 && <img src="/assets/images/react_img2.png" alt="Image" className="_react_img" />}
-          { post.likes.length > 2 && <p className="_feed_inner_timeline_total_reacts_para">{post.likes.length}</p>}
+        <div className="_feed_inner_timeline_total_reacts_image" style={{ position: 'relative' }}>
+          <img src="/assets/images/react_img1.png" alt="Image" className="_react_img1" />
+          <img src="/assets/images/react_img2.png" alt="Image" className="_react_img" />
+          <p
+            className="_feed_inner_timeline_total_reacts_para"
+            style={{ cursor: 'pointer' }}
+            onClick={() => fetchReactors(post._id, 'post')}
+          >
+            {post.likeCount}
+          </p>
+          {activeTarget === post._id && (
+            <ReactorsPopup
+              reactors={reactors}
+              isLoading={reactorsLoading}
+              onClose={close}
+            />
+          )}
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
           <p className="_feed_inner_timeline_total_reacts_para1">
@@ -137,16 +134,16 @@ export default function PostCard({
         </div>
       </div>
 
-      {/* Reaction buttons bar */}
+      {/* Reaction buttons */}
       <div className="_feed_inner_timeline_reaction">
         <button
-          className={`_feed_inner_timeline_reaction_emoji _feed_reaction ${isLiked ? '_feed_reaction_active' : ''}`}
-          onClick={() => onToggleLike(post._id)}
+          className={`_feed_inner_timeline_reaction_emoji _feed_reaction ${post.isLiked ? '_feed_reaction_active' : ''}`}
+          onClick={() => onToggleLike(post._id, 'post')}
           type="button"
         >
-          <span className="{`_feed_inner_timeline_reaction_link ${isLiked ? 'fw-bold' : ''}`}">
+          <span className="_feed_inner_timeline_reaction_link">
             <span>
-              {isLiked ? 'Liked' : 'Like'}
+              {post.isLiked ? 'Liked' : 'Like'}
             </span>
           </span>
         </button>
@@ -177,7 +174,7 @@ export default function PostCard({
         </button>
       </div>
 
-      {/* Comment area */}
+      {/* Comments */}
       {showComments && (
         <div className="_feed_inner_timeline_cooment_area _padd_r24 _padd_l24">
           <CommentSection
@@ -185,11 +182,13 @@ export default function PostCard({
             postId={post._id}
             currentUserId={currentUserId}
             onAddComment={onAddComment}
-            onToggleCommentLike={onToggleCommentLike}
             onDeleteComment={onDeleteComment}
-            onAddReply={onAddReply}
-            onToggleReplyLike={onToggleReplyLike}
-            onDeleteReply={onDeleteReply}
+            onToggleLike={onToggleLike}
+            fetchReactors={fetchReactors}
+            activeTarget={activeTarget}
+            reactors={reactors}
+            reactorsLoading={reactorsLoading}
+            onCloseReactors={close}
           />
         </div>
       )}

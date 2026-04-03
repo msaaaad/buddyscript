@@ -9,19 +9,25 @@ interface Author {
   lastName: string
 }
 
-interface Reply {
+export interface Reply {
   _id: string
+  postId: string
+  parentId: string
   authorId: Author
   content: string
-  likes: string[]
+  likeCount: number
+  isLiked: boolean
   createdAt: string
 }
 
-interface Comment {
+export interface Comment {
   _id: string
+  postId: string
+  parentId: null
   authorId: Author
   content: string
-  likes: string[]
+  likeCount: number
+  isLiked: boolean
   replies: Reply[]
   createdAt: string
 }
@@ -32,13 +38,14 @@ export interface Post {
   content: string
   imageUrl?: string
   visibility: 'public' | 'private'
-  likes: string[]
+  likeCount: number
+  isLiked: boolean
   comments: Comment[]
   createdAt: string
   updatedAt: string
 }
 
-const fetcher = (path: string) => http.get<{ posts: Post[] }>(path).then(d => d)
+const fetcher = (path: string) => http.get<{ posts: Post[] }>(path)
 
 export function usePosts() {
   const { data, error, isLoading, mutate } = useSWR('/posts', fetcher)
@@ -57,38 +64,18 @@ export function usePosts() {
     await mutate()
   }
 
-  async function toggleLike(postId: string) {
-    await http.post(`/posts/${postId}/like`)
+  async function toggleLike(targetId: string, targetType: 'post' | 'comment') {
+    await http.post('/reactions', { targetId, targetType })
     await mutate()
   }
 
-  async function addComment(postId: string, content: string) {
-    await http.post(`/posts/${postId}/comments`, { content })
+  async function addComment(postId: string, content: string, parentId: string | null = null) {
+    await http.post(`/posts/${postId}/comments`, { content, parentId })
     await mutate()
   }
 
   async function deleteComment(postId: string, commentId: string) {
     await http.delete(`/posts/${postId}/comments/${commentId}`)
-    await mutate()
-  }
-
-  async function toggleCommentLike(postId: string, commentId: string) {
-    await http.post(`/posts/${postId}/comments/${commentId}/like`)
-    await mutate()
-  }
-
-  async function addReply(postId: string, commentId: string, content: string) {
-    await http.post(`/posts/${postId}/comments/${commentId}/replies`, { content })
-    await mutate()
-  }
-
-  async function deleteReply(postId: string, commentId: string, replyId: string) {
-    await http.delete(`/posts/${postId}/comments/${commentId}/replies/${replyId}`)
-    await mutate()
-  }
-
-  async function toggleReplyLike(postId: string, commentId: string, replyId: string) {
-    await http.post(`/posts/${postId}/comments/${commentId}/replies/${replyId}/like`)
     await mutate()
   }
 
@@ -101,9 +88,5 @@ export function usePosts() {
     toggleLike,
     addComment,
     deleteComment,
-    toggleCommentLike,
-    addReply,
-    deleteReply,
-    toggleReplyLike,
   }
 }

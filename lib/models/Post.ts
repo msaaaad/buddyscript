@@ -1,49 +1,13 @@
-import mongoose, { Schema, Document, Model, Types } from 'mongoose'
-
-export interface IReply extends Document {
-  authorId: Types.ObjectId
-  content: string
-  likes: Types.DocumentArray<Types.ObjectId>
-  createdAt: Date
-}
-
-export interface IComment extends Document {
-  authorId: Types.ObjectId
-  content: string
-  likes: Types.DocumentArray<Types.ObjectId>
-  replies: Types.DocumentArray<IReply>
-  createdAt: Date
-}
+import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface IPost extends Document {
-  authorId: Types.ObjectId
+  authorId: mongoose.Types.ObjectId
   content: string
   imageUrl?: string
   visibility: 'public' | 'private'
-  likes: Types.DocumentArray<Types.ObjectId>
-  comments: Types.DocumentArray<IComment>
   createdAt: Date
   updatedAt: Date
 }
-
-const ReplySchema = new Schema<IReply>(
-  {
-    authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    content:  { type: String, required: true, trim: true },
-    likes:    [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  },
-  { timestamps: true }
-)
-
-const CommentSchema = new Schema<IComment>(
-  {
-    authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    content:  { type: String, required: true, trim: true },
-    likes:    [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    replies:  [ReplySchema],
-  },
-  { timestamps: true }
-)
 
 const PostSchema = new Schema<IPost>(
   {
@@ -51,8 +15,6 @@ const PostSchema = new Schema<IPost>(
     content:    { type: String, required: true, trim: true },
     imageUrl:   { type: String },
     visibility: { type: String, enum: ['public', 'private'], default: 'public' },
-    likes:      [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    comments:   [CommentSchema],
   },
   { timestamps: true }
 )

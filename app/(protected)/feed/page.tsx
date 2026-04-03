@@ -21,10 +21,6 @@ export default function FeedPage() {
         toggleLike,
         addComment,
         deleteComment,
-        toggleCommentLike,
-        addReply,
-        deleteReply,
-        toggleReplyLike,
     } = usePosts()
 
     return (
@@ -64,11 +60,7 @@ export default function FeedPage() {
                                                 onToggleLike={toggleLike}
                                                 onDeletePost={deletePost}
                                                 onAddComment={addComment}
-                                                onToggleCommentLike={toggleCommentLike}
                                                 onDeleteComment={deleteComment}
-                                                onAddReply={addReply}
-                                                onToggleReplyLike={toggleReplyLike}
-                                                onDeleteReply={deleteReply}
                                             />
                                         ))}
                                     </div>

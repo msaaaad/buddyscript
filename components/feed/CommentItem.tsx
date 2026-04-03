@@ -2,52 +2,44 @@
 
 import { useState } from 'react'
 import ReplyItem from './ReplyItem'
+import ReactorsPopup from './ReactorsPopup'
+import { Comment } from '@/hooks/usePosts'
 
-interface Reply {
+interface Reactor {
   _id: string
-  authorId: { _id: string; firstName: string; lastName: string }
-  content: string
-  likes: string[]
-  createdAt: string
-}
-
-interface Comment {
-  _id: string
-  authorId: { _id: string; firstName: string; lastName: string }
-  content: string
-  likes: string[]
-  replies: Reply[]
-  createdAt: string
+  userId: { _id: string; firstName: string; lastName: string }
 }
 
 interface CommentItemProps {
   comment: Comment
   postId: string
   currentUserId: string
-  onToggleCommentLike: (postId: string, commentId: string) => Promise<void>
+  onAddComment: (postId: string, content: string, parentId?: string | null) => Promise<void>
   onDeleteComment: (postId: string, commentId: string) => Promise<void>
-  onAddReply: (postId: string, commentId: string, content: string) => Promise<void>
-  onToggleReplyLike: (postId: string, commentId: string, replyId: string) => Promise<void>
-  onDeleteReply: (postId: string, commentId: string, replyId: string) => Promise<void>
+  onToggleLike: (targetId: string, targetType: 'post' | 'comment') => Promise<void>
+  fetchReactors: (targetId: string, targetType: 'post' | 'comment') => Promise<void>
+  activeTarget: string | null
+  reactors: Reactor[]
+  reactorsLoading: boolean
+  onCloseReactors: () => void
 }
 
 export default function CommentItem({
   comment, postId, currentUserId,
-  onToggleCommentLike, onDeleteComment,
-  onAddReply, onToggleReplyLike, onDeleteReply,
+  onAddComment, onDeleteComment, onToggleLike,
+  fetchReactors, activeTarget, reactors, reactorsLoading, onCloseReactors,
 }: CommentItemProps) {
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isOwner = comment.authorId._id === currentUserId
-  const isLiked = comment.likes.includes(currentUserId)
 
   async function handleReplySubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!replyContent.trim()) return
     setIsSubmitting(true)
     try {
-      await onAddReply(postId, comment._id, replyContent)
+      await onAddComment(postId, replyContent, comment._id)
       setReplyContent('')
       setShowReplyForm(false)
     } finally {
@@ -74,11 +66,9 @@ export default function CommentItem({
             </div>
           </div>
           <div className="_comment_status">
-            <p className="_comment_status_text">
-              <span>{comment.content}</span>
-            </p>
+            <p className="_comment_status_text"><span>{comment.content}</span></p>
           </div>
-          <div className="_total_reactions">
+          <div className="_total_reactions" style={{ position: 'relative' }}>
             <div className="_total_react">
               <span className="_reaction_like">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -86,24 +76,34 @@ export default function CommentItem({
                 </svg>
               </span>
             </div>
-            <span className="_total">{comment.likes.length}</span>
+            <span
+              className="_total"
+              style={{ cursor: 'pointer' }}
+              onClick={() => fetchReactors(comment._id, 'comment')}
+            >
+              {comment.likeCount}
+            </span>
+            {activeTarget === comment._id && (
+              <ReactorsPopup
+                reactors={reactors}
+                isLoading={reactorsLoading}
+                onClose={onCloseReactors}
+              />
+            )}
           </div>
           <div className="_comment_reply">
             <div className="_comment_reply_num">
               <ul className="_comment_reply_list">
                 <li>
                   <span
-                    style={{ cursor: 'pointer', fontWeight: isLiked ? 'bold' : 'normal' }}
-                    onClick={() => onToggleCommentLike(postId, comment._id)}
+                    style={{ cursor: 'pointer', fontWeight: comment.isLiked ? 'bold' : 'normal' }}
+                    onClick={() => onToggleLike(comment._id, 'comment')}
                   >
-                    {isLiked ? 'Liked.' : 'Like.'}
+                    {comment.isLiked ? 'Liked.' : 'Like.'}
                   </span>
                 </li>
                 <li>
-                  <span
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setShowReplyForm(prev => !prev)}
-                  >
+                  <span style={{ cursor: 'pointer' }} onClick={() => setShowReplyForm(prev => !prev)}>
                     Reply.
                   </span>
                 </li>
@@ -118,9 +118,7 @@ export default function CommentItem({
                   </li>
                 )}
                 <li>
-                  <span className="_time_link">
-                    .{new Date(comment.createdAt).toLocaleDateString()}
-                  </span>
+                  <span className="_time_link">.{new Date(comment.createdAt).toLocaleDateString()}</span>
                 </li>
               </ul>
             </div>
@@ -159,7 +157,7 @@ export default function CommentItem({
         )}
 
         {comment.replies.length > 0 && (
-          <div className="_feed_inner_comment_box" style={{ marginTop: '8px' }}>
+          <div style={{ marginLeft: '16px', marginTop: '8px' }}>
             {comment.replies.map(reply => (
               <ReplyItem
                 key={reply._id}
@@ -167,8 +165,13 @@ export default function CommentItem({
                 postId={postId}
                 commentId={comment._id}
                 currentUserId={currentUserId}
-                onToggleReplyLike={onToggleReplyLike}
-                onDeleteReply={onDeleteReply}
+                onDeleteComment={onDeleteComment}
+                onToggleLike={onToggleLike}
+                fetchReactors={fetchReactors}
+                activeTarget={activeTarget}
+                reactors={reactors}
+                reactorsLoading={reactorsLoading}
+                onCloseReactors={onCloseReactors}
               />
             ))}
           </div>

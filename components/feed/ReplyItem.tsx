@@ -1,9 +1,9 @@
-interface Reply {
+import ReactorsPopup from './ReactorsPopup'
+import { Reply } from '@/hooks/usePosts'
+
+interface Reactor {
   _id: string
-  authorId: { _id: string; firstName: string; lastName: string }
-  content: string
-  likes: string[]
-  createdAt: string
+  userId: { _id: string; firstName: string; lastName: string }
 }
 
 interface ReplyItemProps {
@@ -11,19 +11,24 @@ interface ReplyItemProps {
   postId: string
   commentId: string
   currentUserId: string
-  onToggleReplyLike: (postId: string, commentId: string, replyId: string) => Promise<void>
-  onDeleteReply: (postId: string, commentId: string, replyId: string) => Promise<void>
+  onDeleteComment: (postId: string, commentId: string) => Promise<void>
+  onToggleLike: (targetId: string, targetType: 'post' | 'comment') => Promise<void>
+  fetchReactors: (targetId: string, targetType: 'post' | 'comment') => Promise<void>
+  activeTarget: string | null
+  reactors: Reactor[]
+  reactorsLoading: boolean
+  onCloseReactors: () => void
 }
 
 export default function ReplyItem({
-  reply, postId, commentId, currentUserId,
-  onToggleReplyLike, onDeleteReply,
+  reply, postId, currentUserId,
+  onDeleteComment, onToggleLike,
+  fetchReactors, activeTarget, reactors, reactorsLoading, onCloseReactors,
 }: ReplyItemProps) {
   const isOwner = reply.authorId._id === currentUserId
-  const isLiked = reply.likes.includes(currentUserId)
 
   return (
-    <div className="_comment_main" style={{ marginLeft: '32px', marginTop: '8px' }}>
+    <div className="_comment_main" style={{ marginTop: '8px' }}>
       <div className="_comment_image">
         <a href="#" className="_comment_image_link">
           <img src="/assets/images/txt_img.png" alt="" className="_comment_img1" />
@@ -41,11 +46,9 @@ export default function ReplyItem({
             </div>
           </div>
           <div className="_comment_status">
-            <p className="_comment_status_text">
-              <span>{reply.content}</span>
-            </p>
+            <p className="_comment_status_text"><span>{reply.content}</span></p>
           </div>
-          <div className="_total_reactions">
+          <div className="_total_reactions" style={{ position: 'relative' }}>
             <div className="_total_react">
               <span className="_reaction_like">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,33 +56,44 @@ export default function ReplyItem({
                 </svg>
               </span>
             </div>
-            <span className="_total">{reply.likes.length}</span>
+            <span
+              className="_total"
+              style={{ cursor: 'pointer' }}
+              onClick={() => fetchReactors(reply._id, 'comment')}
+            >
+              {reply.likeCount}
+            </span>
+            {activeTarget === reply._id && (
+              <ReactorsPopup
+                reactors={reactors}
+                isLoading={reactorsLoading}
+                onClose={onCloseReactors}
+              />
+            )}
           </div>
           <div className="_comment_reply">
             <div className="_comment_reply_num">
               <ul className="_comment_reply_list">
                 <li>
                   <span
-                    style={{ cursor: 'pointer', fontWeight: isLiked ? 'bold' : 'normal' }}
-                    onClick={() => onToggleReplyLike(postId, commentId, reply._id)}
+                    style={{ cursor: 'pointer', fontWeight: reply.isLiked ? 'bold' : 'normal' }}
+                    onClick={() => onToggleLike(reply._id, 'comment')}
                   >
-                    {isLiked ? 'Liked.' : 'Like.'}
+                    {reply.isLiked ? 'Liked.' : 'Like.'}
                   </span>
                 </li>
                 {isOwner && (
                   <li>
                     <span
                       style={{ cursor: 'pointer', color: '#ff4d4f' }}
-                      onClick={() => onDeleteReply(postId, commentId, reply._id)}
+                      onClick={() => onDeleteComment(postId, reply._id)}
                     >
                       Delete.
                     </span>
                   </li>
                 )}
                 <li>
-                  <span className="_time_link">
-                    .{new Date(reply.createdAt).toLocaleDateString()}
-                  </span>
+                  <span className="_time_link">.{new Date(reply.createdAt).toLocaleDateString()}</span>
                 </li>
               </ul>
             </div>

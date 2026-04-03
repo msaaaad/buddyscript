@@ -2,40 +2,31 @@
 
 import { useState } from 'react'
 import CommentItem from './CommentItem'
+import { Comment } from '@/hooks/usePosts'
 
-interface Reply {
+interface Reactor {
   _id: string
-  authorId: { _id: string; firstName: string; lastName: string }
-  content: string
-  likes: string[]
-  createdAt: string
-}
-
-interface Comment {
-  _id: string
-  authorId: { _id: string; firstName: string; lastName: string }
-  content: string
-  likes: string[]
-  replies: Reply[]
-  createdAt: string
+  userId: { _id: string; firstName: string; lastName: string }
 }
 
 interface CommentSectionProps {
   comments: Comment[]
   postId: string
   currentUserId: string
-  onAddComment: (postId: string, content: string) => Promise<void>
-  onToggleCommentLike: (postId: string, commentId: string) => Promise<void>
+  onAddComment: (postId: string, content: string, parentId?: string | null) => Promise<void>
   onDeleteComment: (postId: string, commentId: string) => Promise<void>
-  onAddReply: (postId: string, commentId: string, content: string) => Promise<void>
-  onToggleReplyLike: (postId: string, commentId: string, replyId: string) => Promise<void>
-  onDeleteReply: (postId: string, commentId: string, replyId: string) => Promise<void>
+  onToggleLike: (targetId: string, targetType: 'post' | 'comment') => Promise<void>
+  fetchReactors: (targetId: string, targetType: 'post' | 'comment') => Promise<void>
+  activeTarget: string | null
+  reactors: Reactor[]
+  reactorsLoading: boolean
+  onCloseReactors: () => void
 }
 
 export default function CommentSection({
   comments, postId, currentUserId,
-  onAddComment, onToggleCommentLike, onDeleteComment,
-  onAddReply, onToggleReplyLike, onDeleteReply,
+  onAddComment, onDeleteComment, onToggleLike,
+  fetchReactors, activeTarget, reactors, reactorsLoading, onCloseReactors,
 }: CommentSectionProps) {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -45,7 +36,7 @@ export default function CommentSection({
     if (!content.trim()) return
     setIsSubmitting(true)
     try {
-      await onAddComment(postId, content)
+      await onAddComment(postId, content, null)
       setContent('')
     } finally {
       setIsSubmitting(false)
@@ -89,11 +80,14 @@ export default function CommentSection({
             comment={comment}
             postId={postId}
             currentUserId={currentUserId}
-            onToggleCommentLike={onToggleCommentLike}
+            onAddComment={onAddComment}
             onDeleteComment={onDeleteComment}
-            onAddReply={onAddReply}
-            onToggleReplyLike={onToggleReplyLike}
-            onDeleteReply={onDeleteReply}
+            onToggleLike={onToggleLike}
+            fetchReactors={fetchReactors}
+            activeTarget={activeTarget}
+            reactors={reactors}
+            reactorsLoading={reactorsLoading}
+            onCloseReactors={onCloseReactors}
           />
         ))}
       </div>
