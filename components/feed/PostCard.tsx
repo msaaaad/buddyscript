@@ -109,16 +109,14 @@ export default function PostCard({
 
       {/* Reaction counts row */}
       <div className="_feed_inner_timeline_total_reacts _padd_r24 _padd_l24 _mar_b26">
-        <div className="_feed_inner_timeline_total_reacts_image" style={{ position: 'relative' }}>
-          <img src="/assets/images/react_img1.png" alt="Image" className="_react_img1" />
-          <img src="/assets/images/react_img2.png" alt="Image" className="_react_img" />
-          <p
-            className="_feed_inner_timeline_total_reacts_para"
-            style={{ cursor: 'pointer' }}
-            onClick={() => fetchReactors(post._id, 'post')}
+        <div className="_feed_inner_timeline_total_reacts_image" style={{ position: 'relative', cursor: 'pointer' }}  onClick={() => fetchReactors(post._id, 'post')}>
+          { post.likeCount > 0 && <img src="/assets/images/react_img1.png" alt="Image" className="_react_img1" />}
+          { post.likeCount > 1 && <img src="/assets/images/react_img2.png" alt="Image" className="_react_img" />}
+          { post.likeCount > 2 && <p
+            className="_feed_inner_timeline_total_reacts_para"           
           >
             {post.likeCount}
-          </p>
+          </p>}
           {activeTarget === post._id && (
             <ReactorsPopup
               reactors={reactors}

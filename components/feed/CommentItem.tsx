@@ -68,7 +68,7 @@ export default function CommentItem({
           <div className="_comment_status">
             <p className="_comment_status_text"><span>{comment.content}</span></p>
           </div>
-          <div className="_total_reactions" style={{ position: 'relative' }}>
+          <div className="_total_reactions d-flex align-items-center gap-2" style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fetchReactors(comment._id, 'comment')}>
             <div className="_total_react">
               <span className="_reaction_like">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -78,8 +78,6 @@ export default function CommentItem({
             </div>
             <span
               className="_total"
-              style={{ cursor: 'pointer' }}
-              onClick={() => fetchReactors(comment._id, 'comment')}
             >
               {comment.likeCount}
             </span>
